@@ -78,7 +78,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '16'
+          node-version: '18'
 
       # Install frontend dependencies
       - name: Install frontend dependencies
@@ -91,3 +91,72 @@ jobs:
         run: |
           cd documentqa_frontend
           npm test
+
+
+
+
+
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Create .env file
+        run: |
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" > documentqa_backend/.env
+          echo "FRONTEND_DEV_URL=${{secrets.FRONTEND_DEV_URL}}" > documentqa_backend/.env
+          echo "GOOGLE_CLIENT_ID=${{secrets.GOOGLE_CLIENT_ID}}" > documentqa_backend/.env
+          echo "GOOGLE_CLIENT_SECRET=${{secrets.GOOGLE_CLIENT_SECRET}}" > documentqa_backend/.env
+          echo "DATABASE_NAME=${{secrets.DATABASE_NAME}}" > documentqa_backend/.env
+          echo "DATABASE_USER=${{secrets.DATABASE_USER}}" > documentqa_backend/.env
+          echo "DATABASE_PASSWORD=${{secrets.DATABASE_PASSWORD}}" > documentqa_backend/.env
+          echo "DATABASE_HOST=${{secrets.DATABASE_HOST}}" > documentqa_backend/.env
+          echo "DATABASE_PORT=${{secrets.DATABASE_PORT}}" > documentqa_backend/.env
+          echo "REDIS_URL=${{secrets.REDIS_URL}}" > documentqa_backend/.env
+          echo "MONGODB_USERNAME=${{secrets.MONGODB_USERNAME}}" > documentqa_backend/.env
+          echo "MONGODB_PASSWORD=${{secrets.MONGODB_PASSWORD}}" > documentqa_backend/.env
+          echo "MONGODB_CONNECTION_STRING=${{secrets.MONGODB_CONNECTION_STRING}}" > documentqa_backend/.env
+          echo "OPENAI_API_KEY=${{secrets.OPENAI_API_KEY}}" > documentqa_backend/.env
+          echo "VITE_BACKEND_API_URL=${{secrets.VITE_BACKEND_API_URL}}" > documentqa_frontend/.env
+          echo "VITE_GOOGLE_CLIENT_ID"=${{secrets.VITE_GOOGLE_CLIENT_ID}} > documentqa_frontend/.env
+          echo "POSTGRES_PASSWORD=${{secrets.POSTGRES_PASSWORD}}" > .env
+          echo "POSTGRES_DATABASE=${{secrets.POSTGRES_DATABASE}}" > .env
+          echo "POSTGRES_USER=${{secrets.POSTGRES_USER}}" > .env
+          echo "SECRET_KEY=${{secrets.SECRET_KEY}} > .env"
+
+      - name: Build and Start Containers
+        run: |
+          docker-compose -f docker-compose.yml up -d --build
+
+      - name: Run Migrations
+        run: |
+          docker-compose exec backend python manage.py migrate
+
+      - name: Run Backend Tests
+        run: |
+          docker-compose exec backend python manage.py test
+
+      - name: Run Frontend Tests
+        run: |
+          docker-compose exec frontend npm test
+
+      - name: Stop Containers
+        run: |
+          docker-compose -f docker-compose.yml down
