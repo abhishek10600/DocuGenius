@@ -1,12 +1,57 @@
-name: CI
+# name: CI
 
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
+# on:
+#   push:
+#     branches:
+#       - main
+#   pull_request:
+#     branches:
+#       - main
+
+# jobs:
+#   backend:
+#     runs-on: ubuntu-latest
+#     services:
+#       postgres:
+#         image: postgres:17.2
+#         ports:
+#           - 5432:5432
+#         env:
+#           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+#       redis:
+#         image: redis:7
+#         ports:
+#           - 6379:6379
+
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v2
+
+#       - name: Set up Python
+#         uses: actions/setup-python@v2
+#         with:
+#           python-version: '3.12'
+
+#       - name: Install backend dependencies
+#         run: |
+#           cd documentqa_backend
+#           pip install -r requirements.txt
+
+#       - name: Run database migrations
+#         run: |
+#           cd documentqa_backend
+#           python manage.py migrate
+
+#       - name: Start Celery worker in the background
+#         run: |
+#           cd documentqa_backend
+#           nohup celery -A documentqa_backend worker --loglevel=info &
+
+#       - name: Run backend tests
+#         run: |
+#           cd documentqa_backend
+#           pytest --maxfail=1 --disable-warnings -q
+
 
 jobs:
   backend:
@@ -37,15 +82,15 @@ jobs:
           cd documentqa_backend
           pip install -r requirements.txt
 
+      - name: Set environment variables
+        run: |
+          echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgres://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/postgres" >> $GITHUB_ENV
+
       - name: Run database migrations
         run: |
           cd documentqa_backend
           python manage.py migrate
-
-      - name: Start Celery worker in the background
-        run: |
-          cd documentqa_backend
-          nohup celery -A documentqa_backend worker --loglevel=info &
 
       - name: Run backend tests
         run: |
