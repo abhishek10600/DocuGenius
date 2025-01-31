@@ -43,13 +43,6 @@ jobs:
           echo "DATABASE_URL=postgres://postgres:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/postgres" >> $GITHUB_ENV
           echo "DATABASE_HOST=postgres" >> $GITHUB_ENV
 
-      - name: Wait for PostgreSQL to be ready
-        run: |
-          until nc -z -v -w30 postgres 5432; do
-            echo "Waiting for database connection..."
-            sleep 1
-          done
-
       - name: Run database migrations
         run: |
           cd documentqa_backend
