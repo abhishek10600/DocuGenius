@@ -14,28 +14,51 @@ jobs:
     services:
       postgres:
         image: postgres:17.2
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: documentqa_test
         ports:
           - 5432:5432
-        options: --health-cmd="pg_isready -U ${{ secrets.POSTGRES_USER }}" --health-timeout=30s --health-retries=3
+        options: --health-cmd="pg_isready -U postgres" --health-timeout=30s --health-retries=3
       redis:
         image: redis:7
         ports:
           - 6379:6379
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Set up Python environment for the backend
+      # Create .env file dynamically
+      - name: Create .env file for Django
+        run: |
+          cat <<EOF > documentqa_backend/.env
+          DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+          POSTGRES_USER={{secrets.POSTGRES_USER}}
+          POSTGRES_PASSWORD={{secrets.POSTGRES_PASSWORD}}
+          POSTGRES_DB={{secrets.DATABASENAME}}
+          POSTGRES_HOST=localhost
+          POSTGRES_PORT=5432
+          EOF
+
+      # Set up Python
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: '3.12'
 
-      # Install dependencies for backend
+      # Install backend dependencies
       - name: Install backend dependencies
         run: |
           cd documentqa_backend
           pip install -r requirements.txt
+
+      # Run Django migrations
+      - name: Run Django migrations
+        run: |
+          cd documentqa_backend
+          python manage.py migrate
 
       # Run backend tests
       - name: Run backend tests
@@ -43,13 +66,13 @@ jobs:
           cd documentqa_backend
           python manage.py test
 
-      # Set up Node.js for the frontend
+      # Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '16'
 
-      # Install dependencies for frontend
+      # Install frontend dependencies
       - name: Install frontend dependencies
         run: |
           cd documentqa_frontend
@@ -60,25 +83,3 @@ jobs:
         run: |
           cd documentqa_frontend
           npm test
-
-      # Build Docker images for both backend and frontend
-      - name: Build Docker images
-        run: |
-          docker-compose -f docker-compose.yml build
-
-      # Run Docker containers, passing in secrets as environment variables
-      - name: Run Docker containers
-        run: |
-          docker-compose -f docker-compose.yml up -d
-          docker-compose exec backend /bin/sh -c "export DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }} && python manage.py migrate"
-
-      # Run tests inside Docker containers
-      - name: Run tests inside Docker containers
-        run: |
-          docker-compose exec backend python manage.py test
-          docker-compose exec frontend npm test
-
-      # Tear down Docker containers
-      - name: Tear down Docker containers
-        run: |
-          docker-compose -f docker-compose.yml down
