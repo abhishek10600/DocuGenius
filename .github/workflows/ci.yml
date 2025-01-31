@@ -34,7 +34,7 @@ jobs:
       - name: Create .env file for Django
         run: |
           cat <<EOF > documentqa_backend/.env
-          DJANGO_SECRET_KEY=${{ secrets.DJANGO_SECRET_KEY }}
+          DJANGO_SECRET_KEY=${{ secrets.SECRET_KEY }}
           POSTGRES_USER={{secrets.POSTGRES_USER}}
           POSTGRES_PASSWORD={{secrets.POSTGRES_PASSWORD}}
           POSTGRES_DB={{secrets.DATABASENAME}}
