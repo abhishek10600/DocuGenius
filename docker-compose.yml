@@ -8,6 +8,8 @@ services:
       - ./documentqa_backend/.env
     ports:
       - "8000:8000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
     volumes:
       - ./documentqa_backend:/app
     depends_on:
