@@ -42,6 +42,20 @@ jobs:
           echo "POSTGRES_USER=${{secrets.POSTGRES_USER}}" > .env
           echo "SECRET_KEY=${{secrets.SECRET_KEY}} > .env"
 
+      - name: Set up Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sudo sh get-docker.sh
+
+      # Install Docker Compose
+      - name: Install Docker Compose
+        run: |
+          DOCKER_COMPOSE_VERSION=1.29.2
+          sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+          sudo chmod +x /usr/local/bin/docker-compose
+
       - name: Build and Start Containers
         run: |
           docker-compose docker-compose.yml up --build
