@@ -1,0 +1,54 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./documentqa_backend
+    env_file:
+      - ./documentqa_backend/.env
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./documentqa_backend:/app
+    depends_on:
+      - postgres
+      - redis
+    command: >
+      sh -c "python manage.py migrate && celery -A documentqa_backend worker --loglevel=info & gunicorn --bind 0.0.0.0:8000 documentqa_backend.wsgi:application"
+
+  frontend:
+    build:
+      context: ./documentqa_frontend
+    env_file:
+      - ./documentqa_frontend/.env
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./documentqa_frontend:/app
+
+  postgres:
+    image: postgres:17.2
+    env_file:
+      - ./documentqa_backend/.env
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  celery:
+    build:
+      context: ./documentqa_backend
+    command: celery -A documentqa_backend worker --loglevel=info
+    depends_on:
+      - redis
+      - backend
+
+volumes:
+  postgres_data:
