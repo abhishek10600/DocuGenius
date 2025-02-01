@@ -1,17 +1,26 @@
-# Use the official Node.js LTS image
-FROM node:lts
+# Stage 1: Build the React App
+FROM node:lts AS builder
 
-# Set the working directory
 WORKDIR /app
 
-# Install dependencies
 COPY package.json package-lock.json ./
-RUN npm install
+RUN npm install --frozen-lockfile
 
-# Copy the project files
 COPY . .
+RUN npm run build
 
-# Expose the port
-EXPOSE 5173
+# Stage 2: Serve with Nginx
+FROM nginx:alpine
 
-CMD ["npm", "run", "dev"]
+WORKDIR /usr/share/nginx/html
+RUN rm -rf ./*
+
+# Copy built files from the builder stage
+COPY --from=builder /app/dist .
+
+# Copy Nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

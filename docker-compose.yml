@@ -15,18 +15,19 @@ services:
     depends_on:
       - postgres
       - redis
-    command: >
-      sh -c "python manage.py migrate && celery -A documentqa_backend worker --loglevel=info & gunicorn --bind 0.0.0.0:8000 documentqa_backend.wsgi:application"
+    command: sh -c "python manage.py migrate && gunicorn --bind 0.0.0.0:8000 documentqa_backend.wsgi:application"
+    networks:
+      - app_network
 
   frontend:
     build:
       context: ./documentqa_frontend
-    env_file:
-      - ./documentqa_frontend/.env
     ports:
-      - "5173:5173"
-    volumes:
-      - ./documentqa_frontend:/app
+      - "8080:80" # Serve frontend via Nginx
+    depends_on:
+      - backend
+    networks:
+      - app_network
 
   postgres:
     image: postgres:17.2
@@ -40,11 +41,15 @@ services:
       POSTGRES_DATABASE: ${POSTGRES_DATABASE}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
 
   redis:
     image: redis:7
     ports:
       - "6379:6379"
+    networks:
+      - app_network
 
   celery:
     build:
@@ -53,6 +58,12 @@ services:
     depends_on:
       - redis
       - backend
+    networks:
+      - app_network
+
+networks:
+  app_network:
+    driver: bridge
 
 volumes:
   postgres_data:
