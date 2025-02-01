@@ -25,7 +25,9 @@ const ChatInterface = ({ document_id }) => {
     const fetchChatHistory = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8000/api/chats/chat_history/${document_id}/`,
+          `${
+            import.meta.env.VITE_BACKEND_API_URL
+          }/chats/chat_history/${document_id}/`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("authToken")}`,

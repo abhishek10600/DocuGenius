@@ -67,3 +67,5 @@ pnpm-error.log*
 .vscode/  
 .idea/  
 *.swp  
+
+documentqa_frontend/prod_nginx.conf
